@@ -1,1 +1,1 @@
-web: python news.py
+web: python joke.py
