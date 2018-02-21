@@ -1,4 +1,3 @@
-
 from __future__ import print_function
 from future.standard_library import install_aliases
 install_aliases()
@@ -20,8 +19,11 @@ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
- 
     req = request.get_json(silent=True, force=True)
+
+    #print("Request:")
+    #print(json.dumps(req, indent=4))
+
     res = processRequest(req)
 
     res = json.dumps(res, indent=4)
@@ -32,10 +34,10 @@ def webhook():
 
 
 def processRequest(req):
-    if req.get("result").get("action") != "news.search":
+    if req.get("result").get("action") != "telljoke":
         speech = "Invalid Action specified"
-        return createResponse(speech, speech,data)
-    yql_url = "https://newsapi.org/v1/articles?source=the-times-of-india&apiKey=6614fb3731b2472c9efa015800e01de3"
+        return createResponse(speech, speech)
+    yql_url = "https://08ad1pao69.execute-api.us-east-1.amazonaws.com/dev/random_joke"
     result = urlopen(yql_url).read()
     data = json.loads(result)
     #return {
@@ -49,21 +51,16 @@ def processRequest(req):
 
 
 def makeWebhookResult(data):
-    query = data.get("articles")
+    query = data.get("id")
     if query is None:
         speech = "query element missing from news's response"
-        return createResponse(speech, speech,data)
-    from random import randint
-    i=randint(0,6)
-    title = data.get("articles")[i].get("title")
-    descrip = data.get("articles")[i].get("description")
-    newsurl=data.get("articles")[i].get("url")
-    urltoimage=data.get("articles")[i].get("urlToImage")
+        return createResponse(speech, speech)
+    setup = data.get("setup")
+    punchline=data.get("punchline")
     #if (title is None) or (description is None):
     #    speech = "Hmm! Looks like we could not fetch the news"
    # else:
-    speech = "\n"+"Title: " + title +"\n\n"+ "Description: " + descrip+"\n\n"+"Read in detail here:"+newsurl
-    
+    speech =  setup + "\n\n\n\n"+punchline 	
     # print(json.dumps(item, indent=4))
 
 ##    print("speech=")
@@ -72,34 +69,22 @@ def makeWebhookResult(data):
 ##    print(createResponse(speech, speech))
 ##    print("------XXXX-----")
 
-    return createResponse(speech, speech,data)
+    return createResponse(speech, speech)
 
-def createResponse(speech, displayText,data):
-    from random import randint
-    i=randint(0,5) 
-    title=data.get("articles")[i].get("title")
-    urltoimage=data.get("articles")[i].get("urlToImage")
-    newsurl=data.get("articles")[i].get("url")
-    return {"speech":speech,
-	    "displayText":displayText,
-	    "data": {
-             "facebook": {
-             "attachment": {
-	    "type":"template",
-            "payload":{
-             "template_type":"generic",
-            "elements":[
-            {
-             "title":title,
-             "image_url":urltoimage,
-             "default_action": {
-              "type": "web_url",
-              "url": newsurl
-            }
-             }]
-      }}
-	}}
-     }
+def createResponse(speech, displayText):
+##    print("Response:")
+##    print (speech)
+    return {
+        "speech": speech,
+        "displayText": displayText
+        # "data": data,
+        # "contextOut": [],
+        #"source": "apiai-news-org"
+        }
 
 if __name__ == '__main__':
+    # port = int(os.getenv('PORT', 5000))
+
+    # print("Starting app on port %d" % port)
+
     app.run(debug=True)
